@@ -1,3 +1,5 @@
+import random
+
 from building_types import (
     Residential, Industry, Commercial, Park, Road
 )
@@ -16,7 +18,33 @@ def display_menu():
 
 def arcade_mode():
     print("\nOpening Arcade Mode...")
-#arcade mode
+
+    # initialize Arcade Mode starting variables
+    grid = Grid(size=20)
+    coins = 16
+    turn = 1
+    score = 0
+
+    # Building types available in Arcade Mode
+    building_types = [Residential, Industry, Commercial, Park, Road]
+
+    # Randomly select two buildings for the first turn
+    selected_buildings = random.sample(building_types, 2)
+
+    print("\nNew Arcade Game Started!")
+    print("Board Size: 20 x 20")
+    print("Coins:", coins)
+    print("Turn:", turn)
+    print("Score:", score)
+
+    print("\nAvailable buildings for this turn:")
+    print("1.", selected_buildings[0].symbol)
+    print("2.", selected_buildings[1].symbol)
+
+    print("\nCity Board:")
+    print(grid)
+
+    input("\nPress Enter to return to the main menu...")
 
 
 def free_play_mode():
@@ -42,8 +70,16 @@ def high_scores():
 
 
 def exit_game():
-    print("\nThank you for playing!")
-    exit()
+    confirm = input("\nAre you sure you want to exit the game? (Y/N): ")
+
+    if confirm.upper() == "Y":
+        print("\nThank you for playing!")
+        exit()
+    elif confirm.upper() == "N":
+        print("\nReturning to main menu...")
+    else:
+        print("\nInvalid input. Returning to main menu...")
+   
 
 
 def main():
