@@ -1,0 +1,134 @@
+from dataclasses import dataclass, field
+from typing import Optional
+from building_types import Building, Road
+
+
+@dataclass
+class Grid:
+    """Initializes a new grid object, with origin as coordinates (0, 0).
+    Grid() should only be called once to be assigned to a variable for example: `grid = Grid(size=5)`
+    :param size: The size of the grid. Must be an integer value.
+    :type size: int
+    """
+
+    size: int
+    # grid data
+    data: list[list[Optional[Building]]] = field(init=False)
+
+    # origin values, get array index corresponding to origin (coordinates (0, 0))
+    origin_x: int = field(init=False)
+    origin_y: int = field(init=False)
+
+    # print method
+    def __str__(self) -> str:
+        rows = []
+
+        for r in self.data:
+            rows.append(
+                " ".join(cell.symbol if cell is not None else "." for cell in r)
+            )
+        return "\n".join(rows)
+
+    def __post_init__(self):
+        self.data = [[None for _ in range(self.size)] for _ in range(self.size)]
+        # center the coordinates
+        self.origin_x = self.size // 2
+        self.origin_y = self.size // 2
+
+    # helper function to make the grid use coordinates instead of index
+    # please DO NOT use this outside the class
+    def __to_index(self, x: int, y: int) -> tuple[int, int]:
+        return (
+            self.origin_y - y,
+            self.origin_x + x,
+        )
+
+    # used in determining building adjacencies
+    # please DO NOT use this outside the class
+    def __trace_road(self, x: int, y: int, dx: int, dy: int):
+        # returns first building reachable in direction (dx, dy)
+        x += dx
+        y += dy
+
+        # cell must be road
+        if not isinstance(self.get(x, y), Road):
+            return None
+
+        while True:
+            x += dx
+            y += dy
+
+            cell = self.get(x, y)
+            if cell is None:
+                return None
+
+            if isinstance(cell, Road):
+                continue
+
+            return cell
+
+    # road adjacency
+    def road_adjacent(self, x: int, y: int):
+        connected = []
+        for dx, dy in [
+            (0, 1),  # north
+            (0, -1),  # south
+            (1, 0),  # east
+            (-1, 0),  # west
+        ]:
+            building = self.__trace_road(x, y, dx, dy)
+            if building is not None:
+                connected.append(building)
+        return connected
+
+    # building next to building
+    def direct_adjacent(self, x: int, y: int):
+        connected = []
+        for dx, dy in [
+            (0, 1),  # north
+            (0, -1),  # south
+            (1, 0),  # east
+            (-1, 0),  # west
+        ]:
+            building = self.get(x + dx, y + dy)
+            if building is not None:
+                connected.append(building)
+        return connected
+
+    def get(self, x: int, y: int) -> Building | None:
+        """Gets a value at a specific coordinate. This value can be a string or None."""
+        r, c = self.__to_index(x, y)
+
+        # out of bounds
+        if not (0 <= r < self.size and 0 <= c < self.size):
+            return None
+
+        return self.data[r][c]
+
+    def set(self, x: int, y: int, value: Building):
+        """Assigns a provided value at a specific coordinate. Building inserted must be a Building object."""
+        r, c = self.__to_index(x, y)
+
+        self.data[r][c] = value
+
+    def expand_grid(self, increase: int = 1):
+        """Expands the grid by a given integer size in all directions. An increase of 1 increase the grid from a 5x5 to a 7x7.
+        :param increase: The size of the increase. Must be an integer value. Defaults to 1 if no value is provided.
+        :type increase: int
+        """
+        # save data on old grid
+        old_grid = self.data
+        old_size = self.size
+
+        # initialize new grid size
+        self.size += increase * 2
+        self.data = [[None for _ in range(self.size)] for _ in range(self.size)]
+
+        # copy data over to the new grid
+        for r in range(old_size):
+            for c in range(old_size):
+                self.data[r + increase][c + increase] = old_grid[r][c]
+
+        # shift origin to match increase in size
+        self.origin_x += increase
+        self.origin_y += increase

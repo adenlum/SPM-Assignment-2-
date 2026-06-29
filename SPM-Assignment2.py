@@ -1,88 +1,8 @@
-from dataclasses import dataclass, field
+from building_types import (
+    Building, Residential, Industry, Commercial, Park, Road
+)
+from grid import Grid
 
-# initializes a grid, with origin as coordinates (0, 0)
-# origin is defined as the center of the grid.
-@dataclass
-class Grid:
-    """Initializes a new grid object. Grid() should only be called once to be assigned to a variable for example: `grid = Grid(size=5)`
-    :param size: The size of the grid. Must be an integer value.
-    :type size: int
-    """
-    size: int
-    # grid data
-    data: list[list[str | None]] = field(init=False)
-
-    # origin values, get array index corresponding to origin (coordinates (0, 0))
-    origin_x: int = field(init=False)
-    origin_y: int = field(init=False)
-
-    # print method
-    def __str__(self) -> str:
-        rows = []
-
-        for r in self.data:
-            rows.append(
-                " ".join(
-                    str(cell) if cell is not None else "."
-                    for cell in r
-                )
-            )
-        return "\n".join(rows)
-
-
-    def __post_init__(self):
-        self.data = [
-            [None for _ in range(self.size)]
-            for _ in range(self.size)
-        ]
-        # center the coordinates
-        self.origin_x = self.size // 2
-        self.origin_y = self.size // 2
-
-    # helper function to make the grid use coordinates instead of index
-    # please DO NOT use this outside the class
-    def __to_index(self, x: int, y: int) -> tuple[int, int]:
-        return (
-            self.origin_y - y,
-            self.origin_x + x,
-        )
-
-    def get_value_at_coord(self, x: int, y: int) -> str | None:
-        """Gets a value at a specific coordinate. This value can be a string or None.
-        """
-        r, c = self.__to_index(x, y)
-        return self.data[r][c]
-
-    def set_value_at_coord(self, x: int, y: int, value):
-        """Assigns a provided value at a specific coordinate.
-        """
-        r, c = self.__to_index(x, y)
-        self.data[r][c] = value
-
-    def expand_grid(self, increase: int = 1):
-        """Expands the grid by a given integer size in all directions.
-        :param increase: The size of the increase. Must be an integer value. Defaults to 1 if no value is provided.
-        :type increase: int
-        """
-        # save data on old grid
-        old_grid = self.data
-        old_size = self.size
-
-        # initialize new grid size
-        self.size += increase * 2
-        self.data = [
-            [None for _ in range(self.size)]
-            for _ in range(self.size)
-        ]
-
-        # copy data over to the new grid
-        for r in range(old_size):
-            for c in range(old_size):
-                self.data[r + increase][c + increase] = old_grid[r][c]
-
-        # shift origin to match increase in size
-        self.origin_x += increase
-        self.origin_y += increase
 
 def display_menu():
     print("\n========== MAIN MENU ==========")
@@ -102,8 +22,10 @@ def arcade_mode():
 def free_play_mode():
     print("\nOpening Free Play Mode...")
     # initalize the starting variables
-    grid = Grid(size=20)
-    # example access
+    grid = Grid(size=5)
+    grid.expand_grid() # should be a 7x7
+    # example use below
+    grid.set(0, 0 , Commercial())
     print(grid)
 
 
