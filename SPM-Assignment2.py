@@ -1,5 +1,5 @@
 from building_types import (
-    Building, Residential, Industry, Commercial, Park, Road
+    Residential, Industry, Commercial, Park, Road
 )
 from grid import Grid
 
@@ -25,7 +25,7 @@ def free_play_mode():
     grid = Grid(size=5)
     grid.expand_grid() # should be a 7x7
     # example use below
-    grid.set(0, 0 , Commercial())
+    grid.set(0, 0, Commercial())
     print(grid)
 
 
