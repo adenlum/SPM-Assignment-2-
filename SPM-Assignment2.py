@@ -10,17 +10,11 @@ def display_menu():
 
 def arcade_mode():
     print("\nOpening Arcade Mode...")
+#arcade mode
 
 
 def free_play_mode():
     print("\nOpening Free Play Mode...")
-    grid_length: int = 5
-    grid: list[list] = [[0 for _ in range(grid_length)] for _ in range(grid_length)]
-    grid_coords: list[list[tuple[int, int]]] = [[(x, y) for y in range(grid_length)] for x in range(grid_length)]
-    score: int = 0
-    current_turn: int = 1
-
-
 
 
 def load_game():
