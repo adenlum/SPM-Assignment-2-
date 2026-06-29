@@ -101,13 +101,10 @@ def arcade_mode():
 
 def free_play_mode():
     print("\nOpening Free Play Mode...")
-
-
     # initalize the starting variables
     grid = Grid(size=20)
     # example access
     print(grid)
-
 
 
 def load_game():
