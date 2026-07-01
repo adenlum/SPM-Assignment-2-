@@ -15,6 +15,48 @@ def display_menu():
     print("5. High Scores")
     print("6. Exit")
 
+def place_building(grid, selected_buildings):
+    """Allow the player to choose and place a building."""
+
+    # Display available buildings
+    print("\nAvailable buildings:")
+    print("1.", selected_buildings[0].symbol)
+    print("2.", selected_buildings[1].symbol)
+
+    # Choose building
+    while True:
+        choice = input("\nChoose a building (1 or 2): ")
+
+        if choice == "1":
+            building = selected_buildings[0]()
+            break
+        elif choice == "2":
+            building = selected_buildings[1]()
+            break
+        else:
+            print("Invalid choice. Please enter 1 or 2.")
+
+    # Choose location
+    while True:
+        try:
+            x = int(input("Enter X coordinate: "))
+            y = int(input("Enter Y coordinate: "))
+
+            # Check if location is empty
+            if grid.get(x, y) is not None:
+                print("That location is already occupied.")
+                continue
+
+            # Place building
+            grid.set(x, y, building)
+
+            print("\nBuilding placed successfully!")
+            print(grid)
+
+            return building, x, y
+
+        except ValueError:
+            print("Please enter valid numbers.")
 
 def arcade_mode():
     print("\nOpening Arcade Mode...")
@@ -37,14 +79,18 @@ def arcade_mode():
     print("Turn:", turn)
     print("Score:", score)
 
-    print("\nAvailable buildings for this turn:")
-    print("1.", selected_buildings[0].symbol)
-    print("2.", selected_buildings[1].symbol)
-
     print("\nCity Board:")
     print(grid)
+    building, x, y = place_building(grid, selected_buildings)
+
+    score += building.score(grid, x, y)
+    coins -= 1
+
+    print("\nScore:", score)
+    print("Coins:", coins)
 
     input("\nPress Enter to return to the main menu...")
+
 
 
 def free_play_mode():
