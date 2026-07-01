@@ -15,26 +15,27 @@ def display_menu():
     print("5. High Scores")
     print("6. Exit")
 
-def place_building(grid, selected_buildings):
+def place_building(grid, available_buildings, turn, mode):
     """Allow the player to choose and place a building."""
 
-    # Display available buildings
-    print("\nAvailable buildings:")
-    print("1.", selected_buildings[0].symbol)
-    print("2.", selected_buildings[1].symbol)
+    print("\nAvailable Buildings:")
+
+    for i, building in enumerate(available_buildings, start=1):
+        print(f"{i}. {building.symbol}")
 
     # Choose building
     while True:
-        choice = input("\nChoose a building (1 or 2): ")
+        try:
+            choice = int(input("\nChoose a building: "))
 
-        if choice == "1":
-            building = selected_buildings[0]()
-            break
-        elif choice == "2":
-            building = selected_buildings[1]()
-            break
-        else:
-            print("Invalid choice. Please enter 1 or 2.")
+            if 1 <= choice <= len(available_buildings):
+                building = available_buildings[choice - 1]()
+                break
+
+            print("Invalid choice.")
+
+        except ValueError:
+            print("Please enter a number.")
 
     # Choose location
     while True:
@@ -42,12 +43,20 @@ def place_building(grid, selected_buildings):
             x = int(input("Enter X coordinate: "))
             y = int(input("Enter Y coordinate: "))
 
-            # Check if location is empty
+            # Occupied
             if grid.get(x, y) is not None:
                 print("That location is already occupied.")
                 continue
 
-            # Place building
+            # Arcade rule:
+            # Turn 1 can build anywhere
+            # Turn 2 onwards must be adjacent
+            if mode == "arcade" and turn > 1:
+
+                if len(grid.direct_adjacent(x, y)) == 0:
+                    print("Building must be adjacent to an existing building.")
+                    continue
+
             grid.set(x, y, building)
 
             print("\nBuilding placed successfully!")
@@ -81,7 +90,11 @@ def arcade_mode():
 
     print("\nCity Board:")
     print(grid)
-    building, x, y = place_building(grid, selected_buildings)
+    building, x, y = place_building(
+    grid,
+    selected_buildings,
+    turn,
+    "arcade")
 
     score += building.score(grid, x, y)
     coins -= 1
