@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Tuple
 
 from building_types import Building, Residential, Industry, Commercial, Park, Road
 
@@ -100,22 +100,45 @@ class Grid:
                 connected.append((x + dx, y + dy, building))
         return connected
 
-    def get(self, x: int, y: int) -> Building | None:
-        """Gets a value at a specific coordinate. This value can be a string or None."""
+    def get(self, x: int, y: int) -> Optional[Building]:
+        """Gets a value at a specific coordinate. This value can be a Building or None.
+        Returns None if the coordinates entered are out of bounds.
+        :param x: The x-coordinate of the grid coordinate.
+        :param y: The y-coordinate of the grid coordinate.
+        """
         r, c = self.__to_index(x, y)
 
         # out of bounds
         if not (0 <= r < self.size and 0 <= c < self.size):
-            return None
+            raise IndexError(f"Coordinates ({x}, {y}) are out of bounds.")
 
         return self.data[r][c]
+        
 
-    def set(self, x: int, y: int, value: Building):
-        """Assigns a provided value at a specific coordinate. Building inserted must be a Building object."""
+    def set(self, x: int, y: int, value: Building | None):
+        """Assigns a provided value at a specific coordinate. Building inserted must be a Building object.
+        :param x: The x-coordinate of the grid coordinate.
+        :param y: The y-coordinate of the grid coordinate.
+        :param value: The building object to insert. To remove a building, use None.
+        """
         r, c = self.__to_index(x, y)
+
+        # out of bounds
+        if not (0 <= r < self.size and 0 <= c < self.size):
+            raise IndexError(f"Coordinates ({x}, {y}) are out of bounds.")
 
         self.data[r][c] = value
 
+    def has_building_on_border(self) -> bool:
+        """Returns a boolean True or False depending on whether the grid has a building on its borders.
+        """
+        return (
+            any(cell is not None for cell in self.data[0])
+            or any(cell is not None for cell in self.data[-1])
+            or any(row[0] is not None for row in self.data)
+            or any(row[-1] is not None for row in self.data)
+        )
+    
     def expand_grid(self, increase: int = 1):
         """Expands the grid by a given integer size in all directions. An increase of 1 increase the grid from a 5x5 to a 7x7.
         :param increase: The size of the increase. Must be an integer value. Defaults to 1 if no value is provided.
@@ -158,7 +181,11 @@ class Grid:
                     continue
 
                 # get building and check if its Residential
-                b = self.get(cx, cy)
+                try:
+                    b = self.get(cx, cy)
+                except IndexError:
+                    continue
+
                 if not isinstance(b, Residential):
                     continue
 
@@ -177,7 +204,11 @@ class Grid:
                     continue
 
                 # get building and check if its Road
-                b = self.get(cx, cy)
+                try:
+                    b = self.get(cx, cy)
+                except IndexError:
+                    continue
+
                 if not isinstance(b, Road):
                     continue
 
@@ -185,16 +216,20 @@ class Grid:
                 for dx, dy in [(1, 0), (-1, 0)]:
                     stack.append((cx + dx, cy))
 
-        # iterate through the grid
-        min_coord = -(self.size // 2)
-        max_coord = self.size // 2
+        for r in range(self.size):
+            for c in range(self.size):
+                # Translate array index back to coordinates safely
+                x = c - self.origin_x
+                y = self.origin_y - r
 
-        for y in range(max_coord, min_coord - 1, -1):
-            for x in range(max_coord, min_coord + 1, ):
-                building = self.get(x, y)
+                try:
+                    building = self.get(x, y)
+                except IndexError:
+                    continue
 
                 if building is None:
                     continue
+
                 # score
                 score += building.score(self, x, y)
 
