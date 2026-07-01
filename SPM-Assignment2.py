@@ -97,10 +97,33 @@ def free_play_mode():
     print("\nOpening Free Play Mode...")
     # initalize the starting variables
     grid = Grid(size=5)
-    grid.expand_grid() # should be a 7x7
-    # example use below
-    grid.set(0, 0, Commercial())
-    print(grid)
+    coins = float("inf")
+    turn = 1
+    score = 0
+    turns_with_coin_loss = 0
+    # init game
+    while turns_with_coin_loss < 20:
+        # print routine
+        print("\nNew Free Play Game Started!")
+        print(f"Board Size: {grid.size} x {grid.size}")
+        print("Coins:", coins)
+        print("Turn:", turn)
+        print("Score:", score)
+
+        # TODO: handle the logic for input
+
+
+        # end of turn
+        turn_score, profit = grid.calculate_turn()
+        if profit < 0:
+            # if making a loss, add one
+            turns_with_coin_loss += 1
+        else:
+            # profit / even = reset the counter
+            turns_with_coin_loss = 0
+        score += turn_score
+        turn += 1
+
 
 
 def load_game():

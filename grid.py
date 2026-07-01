@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
-from building_types import Building, Road
+
+from building_types import Building, Residential, Industry, Commercial, Park, Road
 
 
 @dataclass
@@ -8,7 +9,6 @@ class Grid:
     """Initializes a new grid object, with origin as coordinates (0, 0).
     Grid() should only be called once to be assigned to a variable for example: `grid = Grid(size=5)`
     :param size: The size of the grid. Must be an integer value.
-    :type size: int
     """
 
     size: int
@@ -36,7 +36,6 @@ class Grid:
         self.origin_y = self.size // 2
 
     # helper function to make the grid use coordinates instead of index
-    # please DO NOT use this outside the class
     def __to_index(self, x: int, y: int) -> tuple[int, int]:
         return (
             self.origin_y - y,
@@ -78,7 +77,13 @@ class Grid:
         ]:
             building = self.__trace_road(x, y, dx, dy)
             if building is not None:
-                connected.append(building)
+                nx, ny = x + dx, y + dy
+                # follows road
+                while isinstance(self.get(nx, ny), Road):
+                    nx += dx
+                    ny += dy
+
+                connected.append((nx, ny, building))
         return connected
 
     # building next to building
@@ -92,7 +97,7 @@ class Grid:
         ]:
             building = self.get(x + dx, y + dy)
             if building is not None:
-                connected.append(building)
+                connected.append((x + dx, y + dy, building))
         return connected
 
     def get(self, x: int, y: int) -> Building | None:
@@ -114,7 +119,6 @@ class Grid:
     def expand_grid(self, increase: int = 1):
         """Expands the grid by a given integer size in all directions. An increase of 1 increase the grid from a 5x5 to a 7x7.
         :param increase: The size of the increase. Must be an integer value. Defaults to 1 if no value is provided.
-        :type increase: int
         """
         # save data on old grid
         old_grid = self.data
@@ -132,3 +136,86 @@ class Grid:
         # shift origin to match increase in size
         self.origin_x += increase
         self.origin_y += increase
+
+    def calculate_turn(self) -> tuple[int, int]:
+        """Calculates the total score and profit (coins) generated from all buildings in a turn.
+        The profit can be a negative value if the upkeep of buildings is greater than the income generated.
+        :returns: (score, profit)
+        """
+        score = 0
+        income = 0
+        upkeep = 0
+
+        visited_residential = set()
+        visited_road = set()
+
+        # clusters Residentials within the same cluster
+        def __cluster_residential(ix: int, iy: int):
+            stack = [(ix, iy)]
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in visited_residential:
+                    continue
+
+                # get building and check if its Residential
+                b = self.get(cx, cy)
+                if not isinstance(b, Residential):
+                    continue
+
+                visited_residential.add((cx, cy))
+                for nx, ny, b in self.direct_adjacent(cx, cy):
+                    if isinstance(b, Residential):
+                        stack.append((nx, ny))
+
+        # clusters Roads within the same row
+        def __cluster_road(ix: int, iy: int):
+            stack = [(ix, iy)]
+
+            while stack:
+                cx, cy = stack.pop()
+                if (cx, cy) in visited_road:
+                    continue
+
+                # get building and check if its Road
+                b = self.get(cx, cy)
+                if not isinstance(b, Road):
+                    continue
+
+                visited_road.add((cx, cy))
+                for dx, dy in [(1, 0), (-1, 0)]:
+                    stack.append((cx + dx, cy))
+
+        # iterate through the grid
+        min_coord = -(self.size // 2)
+        max_coord = self.size // 2
+
+        for y in range(max_coord, min_coord - 1, -1):
+            for x in range(max_coord, min_coord + 1, ):
+                building = self.get(x, y)
+
+                if building is None:
+                    continue
+                # score
+                score += building.score(self, x, y)
+
+                # income & upkeep
+                if isinstance(building, Residential):
+                    income += 1
+
+                    # 1 upkeep per connected cluster
+                    if (x, y) not in visited_residential:
+                        __cluster_residential(x, y)
+                        upkeep += 1
+                elif isinstance(building, Industry):
+                    income += 2
+                    upkeep += 1
+                elif isinstance(building, Commercial):
+                    income += 3
+                    upkeep += 2
+                elif isinstance(building, Park):
+                    upkeep += 1
+                elif isinstance(building, Road):
+                    if (x, y) not in visited_road:
+                        __cluster_road(x, y)
+                        upkeep += 1
+        return score, income - upkeep
