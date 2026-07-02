@@ -1,6 +1,7 @@
 import random
 
 from building_types import Commercial, Industry, Park, Residential, Road
+from freeplay import fp_demolish_building, fp_place_building
 from grid import Grid
 
 
@@ -101,113 +102,64 @@ def arcade_mode():
 
 
 def free_play_mode():
-    def place_building_fp(g: Grid):
-        building_instances = [Residential(), Industry(), Commercial(), Park(), Road()]
-
-        while True:
-            print("\nSelect a building type to place:")
-            for i, b in enumerate(building_instances):
-                print(f"{i + 1}. {b.name} ({b.symbol})")
-
-            option = input("\nSelect an option (1-5, 0): ")
-            match option:
-                case "1" | "2" | "3" | "4" | "5":
-                    building_idx = int(option) - 1
-                    building_to_place = building_instances[building_idx]
-
-                    # get user coordinates and check whether it's possible to place building
-                    while True:
-                        print("\nSelect the coordinates to place the building.")
-                        print("To enter the coordinates, type: X, Y")
-                        print("The origin (center) of the grid is (0, 0).")
-                        print(g)
-
-                        option = input("\nEnter coordinates: ")
-                        # handles if decimal or non coordinate values
-                        if "." in option or len(option.split(",")) != 2:
-                            print("Please enter valid coordinates.")
-                            continue
-                        option = option.split(",")
-
-                        x, y = int(option[0]), int(option[1])
-                        try:
-                            b = g.get(x, y)
-                            # building present
-                            if b is not None:
-                                print(
-                                    f"There is a {b.name} building at coordinates ({x}, {y})!"
-                                )
-                                continue
-                            g.set(x, y, building_to_place)
-                            break 
-                        except IndexError as e:
-                            # IndexError is raised when x, y are out of bounds
-                            print(f"{e}")
-                    # check if building on the sides, and that the grid should expand
-                    if g.has_building_on_border():
-                        g.expand_grid(5)
-                    break
-                case "0":
-                    break
-                case _:
-                    print("Invalid option. Please try again.")
-        return g
-
     print("\nOpening Free Play Mode...")
     # initalize the starting variables
     grid = Grid(size=5)
     turn = 1
     score = 0
+    profit = 0
     turns_with_coin_loss = 0
     # init game
     print("\nNew Free Play Game Started!")
     while turns_with_coin_loss < 20:
         # print routine
-        print("===== Main Menu =====")
-        print(f"\nBoard Size: {grid.size} x {grid.size}")
+        print("\n===== FREE PLAY =====")
+        print(f"Board Size: {grid.size} x {grid.size}")
         print("Turn:", turn)
         print("Score:", score)
+        print(f"Profit Last Turn: {f'+{profit}' if profit > 0 else profit}")
+        print(f"Turns With Coin Loss: {turns_with_coin_loss} / 20")
 
         print(grid)
 
         # turn
         print("\nOptions")
         print("1. Place Building")
-        print("2. Demolish Building")
+        if not grid.is_empty():
+            print("2. Demolish Building")
         print("3. Settings")
         print("4. Save Game")
         print("5. End Current Turn")
         print("0. Exit")
         turn_option = input("\nSelect an option (1-5, 0): ")
-        match turn_option:
-            case "1":
-                grid = place_building_fp(grid)
-            case "2":
-                pass
-            case "3":
-                pass
-            case "4":
-                pass
-            case "5":
-                end_turn_option = input(
-                    "Are you sure you want to end the current turn? (y/N): "
-                )
-                if end_turn_option.upper() == "Y":
-                    # end of turn
-                    turn_score, profit = grid.calculate_turn()
-                    if profit < 0:
-                        # if making a loss, add one
-                        turns_with_coin_loss += 1
-                    else:
-                        # profit / even = reset the counter
-                        turns_with_coin_loss = 0
-                    score += turn_score
-                    turn += 1
-                continue
-            case "0":
-                return
-            case _:
-                print("Invalid option. Please try again.")
+        if turn_option == "1":
+            grid = fp_place_building(grid)
+        if turn_option == "2" and not grid.is_empty():
+            grid = fp_demolish_building(grid)
+        if turn_option == "3":
+            pass
+        if turn_option == "4":
+            pass
+        if turn_option == "5":
+            end_turn_option = input(
+                "Are you sure you want to end the current turn? (y/N): "
+            )
+            if end_turn_option.upper() == "Y":
+                # end of turn
+                turn_score, profit = grid.calculate_turn()
+                if profit < 0:
+                    # if making a loss, add one
+                    turns_with_coin_loss += 1
+                else:
+                    # profit / even = reset the counter
+                    turns_with_coin_loss = 0
+                score += turn_score
+                turn += 1
+            continue
+        if turn_option == "0":
+            return
+        else:
+            print("Invalid option. Please try again.")
 
 
 def load_game():
@@ -223,15 +175,13 @@ def high_scores():
 
 
 def exit_game():
-    confirm = input("\nAre you sure you want to exit the game? (Y/N): ")
+    confirm = input("\nAre you sure you want to exit the game? (y/N): ")
 
     if confirm.upper() == "Y":
         print("\nThank you for playing!")
         exit()
-    elif confirm.upper() == "N":
-        print("\nReturning to main menu...")
     else:
-        print("\nInvalid input. Returning to main menu...")
+        print("\nReturning to main menu...")
 
 
 def main():

@@ -138,7 +138,12 @@ class Grid:
             or any(row[0] is not None for row in self.data)
             or any(row[-1] is not None for row in self.data)
         )
-    
+
+    def is_empty(self) -> bool:
+        """Returns a boolean True or False depending on whether there's a building within the grid.
+        """
+        return all(cell is None for row in self.data for cell in row)
+
     def expand_grid(self, increase: int = 1):
         """Expands the grid by a given integer size in all directions. An increase of 1 increase the grid from a 5x5 to a 7x7.
         :param increase: The size of the increase. Must be an integer value. Defaults to 1 if no value is provided.
