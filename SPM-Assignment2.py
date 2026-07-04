@@ -36,6 +36,18 @@ def calculate_arcade_score(grid):
     return total_score
 
 
+def has_adjacent_building(grid, x, y):
+    
+    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+        try:
+            if grid.get(x + dx, y + dy) is not None:
+                return True
+        except IndexError:
+            # neighbour is off the board - just treat it as "no building there"
+            continue
+    return False
+
+
 def place_building(grid, available_buildings, turn, mode):
     """Allow the player to choose and place a building."""
 
@@ -64,8 +76,14 @@ def place_building(grid, available_buildings, turn, mode):
             x = int(input("Enter X coordinate: "))
             y = int(input("Enter Y coordinate: "))
 
-            # Occupied
-            if grid.get(x, y) is not None:
+            # Occupied / out of bounds
+            try:
+                occupied = grid.get(x, y) is not None
+            except IndexError:
+                print("Those coordinates are outside the board. Please try again.")
+                continue
+
+            if occupied:
                 print("That location is already occupied.")
                 continue
 
@@ -73,7 +91,7 @@ def place_building(grid, available_buildings, turn, mode):
             # Turn 1 can build anywhere
             # Turn 2 onwards must be adjacent
             if mode == "arcade" and turn > 1:
-                if len(grid.direct_adjacent(x, y)) == 0:
+                if not has_adjacent_building(grid, x, y):
                     print("Building must be adjacent to an existing building.")
                     continue
 
