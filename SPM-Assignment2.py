@@ -15,6 +15,27 @@ def display_menu():
     print("6. Exit")
 
 
+
+def calculate_arcade_score(grid):
+    """Calculate the total Arcade Mode score based on all buildings on the board."""
+    total_score = 0
+
+    for row in range(grid.size):
+        for col in range(grid.size):
+            x = col - grid.origin_x
+            y = grid.origin_y - row
+
+            try:
+                building = grid.get(x, y)
+            except IndexError:
+                continue
+
+            if building is not None:
+                total_score += building.score(grid, x, y)
+
+    return total_score
+
+
 def place_building(grid, available_buildings, turn, mode):
     """Allow the player to choose and place a building."""
 
@@ -76,28 +97,47 @@ def arcade_mode():
     turn = 1
     score = 0
 
-    # Building types available in Arcade Mode
     building_types = [Residential, Industry, Commercial, Park, Road]
 
-    # Randomly select two buildings for the first turn
-    selected_buildings = random.sample(building_types, 2)
-
     print("\nNew Arcade Game Started!")
-    print("Board Size: 20 x 20")
-    print("Coins:", coins)
-    print("Turn:", turn)
-    print("Score:", score)
 
-    print("\nCity Board:")
-    print(grid)
-    building, x, y = place_building(grid, selected_buildings, turn, "arcade")
+    while coins > 0:
+        selected_buildings = random.sample(building_types, 2)
 
-    score += building.score(grid, x, y)
-    coins -= 1
+        print("\n===== ARCADE MODE =====")
+        print("Board Size: 20 x 20")
+        print("Coins:", coins)
+        print("Turn:", turn)
+        print("Score:", score)
 
-    print("\nScore:", score)
-    print("Coins:", coins)
+        print("\nCity Board:")
+        print(grid)
 
+        print("\nOptions")
+        print("1. Build a Building")
+        print("2. Exit to Main Menu")
+
+        option = input("\nSelect an option: ")
+
+        if option == "1":
+            building, x, y = place_building(grid, selected_buildings, turn, "arcade")
+
+            score = calculate_arcade_score(grid)
+            coins -= 1
+            turn += 1
+
+            print("\nScore:", score)
+            print("Coins:", coins)
+
+        elif option == "2":
+            print("\nReturning to main menu...")
+            return
+
+        else:
+            print("Invalid option. Please try again.")
+
+    print("\nGame Over! You have run out of coins.")
+    print("Final Score:", score)
     input("\nPress Enter to return to the main menu...")
 
 
