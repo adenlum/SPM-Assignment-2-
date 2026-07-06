@@ -165,7 +165,6 @@ def free_play_mode():
     grid = Grid(size=5)
     turn = 1
     score = 0
-    profit = 0
     turns_with_coin_loss = 0
     # init game
     print("\nNew Free Play Game Started!")
@@ -175,7 +174,6 @@ def free_play_mode():
         print(f"Board Size: {grid.size} x {grid.size}")
         print("Turn:", turn)
         print("Score:", score)
-        print(f"Profit Last Turn: {f'+{profit}' if profit > 0 else profit}")
         print(f"Turns With Coin Loss: {turns_with_coin_loss} / 20")
 
         print(grid)
@@ -218,6 +216,9 @@ def free_play_mode():
             return
         else:
             print("Invalid option. Please try again.")
+    print("===== Game Over =====")
+    print(f"You lasted for {turn} turns.")
+    print("Final Score:", score)
 
 
 def load_game():
