@@ -15,37 +15,12 @@ def display_menu():
     print("6. Exit")
 
 
-
-def calculate_arcade_score(grid):
-    """Calculate the total Arcade Mode score based on all buildings on the board."""
-    total_score = 0
-
-    for row in range(grid.size):
-        for col in range(grid.size):
-            x = col - grid.origin_x
-            y = grid.origin_y - row
-
-            try:
-                building = grid.get(x, y)
-            except IndexError:
-                continue
-
-            if building is not None:
-                total_score += building.score(grid, x, y)
-
-    return total_score
-
-
 def has_adjacent_building(grid, x, y):
-    
-    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-        try:
-            if grid.get(x + dx, y + dy) is not None:
-                return True
-        except IndexError:
-            # neighbour is off the board - just treat it as "no building there"
-            continue
-    return False
+    """Check whether the selected cell is directly beside an existing building."""
+    try:
+        return len(grid.direct_adjacent(x, y)) > 0
+    except IndexError:
+        return False
 
 
 def place_building(grid, available_buildings, turn, mode):
@@ -109,7 +84,7 @@ def place_building(grid, available_buildings, turn, mode):
 def arcade_mode():
     print("\nOpening Arcade Mode...")
 
-    # initialize Arcade Mode starting variables
+    # Initialize Arcade Mode starting variables
     grid = Grid(size=20)
     coins = 16
     turn = 1
@@ -138,14 +113,17 @@ def arcade_mode():
         option = input("\nSelect an option: ")
 
         if option == "1":
-            building, x, y = place_building(grid, selected_buildings, turn, "arcade")
+            place_building(grid, selected_buildings, turn, "arcade")
 
-            score = calculate_arcade_score(grid)
+            # Use existing grid.py function to calculate score
+            score, _ = grid.calculate_turn()
+
+            # Each building construction costs 1 coin
             coins -= 1
             turn += 1
 
-            print("\nScore:", score)
-            print("Coins:", coins)
+            print("\nUpdated Score:", score)
+            print("Coins Left:", coins)
 
         elif option == "2":
             print("\nReturning to main menu...")
