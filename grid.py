@@ -60,28 +60,32 @@ class Grid:
             self.origin_x + x,
         )
 
-    # used in determining building adjacencies
+    # used in determining building adjacencies by determining whether a building is connected on continuous road
     # please DO NOT use this outside the class
     def __trace_road(self, x: int, y: int, dx: int, dy: int):
-        # returns first building reachable in direction (dx, dy)
+        # move a step towards a direction
         x += dx
         y += dy
 
-        # cell must be road
+        # check if cell is a Road
         if not isinstance(self.get(x, y), Road):
             return None
 
         while True:
+            # continue going in the direction
             x += dx
             y += dy
 
             cell = self.get(x, y)
+            # the road has ended, with nothing beyond it
             if cell is None:
                 return None
 
+            # the road has not ended
             if isinstance(cell, Road):
                 continue
 
+            # the road has ended, with a building at the end of it
             return cell
 
     # road adjacency
@@ -94,9 +98,11 @@ class Grid:
             (-1, 0),  # west
         ]:
             building = self.__trace_road(x, y, dx, dy)
+            
+            # check if a Building is actually found
             if building is not None:
+                # follow the road to the building and store it
                 nx, ny = x + dx, y + dy
-                # follows road
                 while isinstance(self.get(nx, ny), Road):
                     nx += dx
                     ny += dy
@@ -104,7 +110,7 @@ class Grid:
                 connected.append((nx, ny, building))
         return connected
 
-    # building next to building
+    # building directly beside another building
     def direct_adjacent(self, x: int, y: int):
         connected = []
         for dx, dy in [
@@ -113,7 +119,10 @@ class Grid:
             (1, 0),  # east
             (-1, 0),  # west
         ]:
+            # check if a Building is located in that direction
             building = self.get(x + dx, y + dy)
+
+            # check if a Building is actually found
             if building is not None:
                 connected.append((x + dx, y + dy, building))
         return connected
