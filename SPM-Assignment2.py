@@ -171,9 +171,9 @@ def free_play_mode():
         if turn_option == "2" and not grid.is_empty():
             grid = fp_demolish_building(grid)
         if turn_option == "3":
-            pass
+            print("Feature has not been implemented yet!")
         if turn_option == "4":
-            pass
+            print("Feature has not been implemented yet!")
         if turn_option == "5":
             end_turn_option = input(
                 "Are you sure you want to end the current turn? (y/N): "

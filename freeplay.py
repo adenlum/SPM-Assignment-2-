@@ -29,14 +29,10 @@ def fp_place_building(grid: Grid):
                     # back to building selection
                     if "~" in option:
                         break
-                    # handles if decimal or non coordinate values
-                    if "." in option or len(option.split(",")) != 2:
-                        print("Please enter valid coordinates.")
-                        continue
-                    option = option.split(",")
 
-                    x, y = int(option[0]), int(option[1])
                     try:
+                        option = option.split(",")
+                        x, y = int(option[0]), int(option[1])
                         b = grid.get(x, y)
                         # building present
                         if b is not None:
@@ -46,9 +42,12 @@ def fp_place_building(grid: Grid):
                             continue
                         grid.set(x, y, building_to_place)
                         break
-                    except IndexError as e:
+                    except ValueError:
+                        print("Please enter valid coordinates.")
+                    except IndexError:
                         # IndexError is raised when x, y are out of bounds
-                        print(f"{e}")
+                        print("Coordinates entered are out of bounds.")
+
                 # check if building on the sides, and that the grid should expand
                 if grid.has_building_on_border():
                     grid.expand_grid(5)
