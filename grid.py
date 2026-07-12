@@ -19,15 +19,33 @@ class Grid:
     origin_x: int = field(init=False)
     origin_y: int = field(init=False)
 
+   # print method
     # print method
     def __str__(self) -> str:
-        rows = []
+        cell_w = 3  # width of every cell, including the label cells
 
-        for r in self.data:
-            rows.append(
-                " ".join(cell.symbol if cell is not None else "." for cell in r)
-            )
-        return "\n".join(rows)
+        lines = []
+
+        border = "+" + ("-" * cell_w + "+") * (self.size + 1)  # +1 for the label column
+        lines.append(border)
+
+        # header row: blank corner cell + column numbers, each in its own bordered cell
+        header = "|" + " " * cell_w + "|"
+        for col in range(self.size):
+            header += f"{col:^{cell_w}}|"
+        lines.append(header)
+        lines.append(border)
+
+        for row_idx, row in enumerate(self.data):
+            row_str = f"|{row_idx:^{cell_w}}|"
+            for cell in row:
+                symbol = cell.symbol if cell is not None else "."
+                row_str += f"{symbol:^{cell_w}}|"
+            lines.append(row_str)
+            lines.append(border)
+
+        return "\n".join(lines)
+
 
     def __post_init__(self):
         self.data = [[None for _ in range(self.size)] for _ in range(self.size)]
