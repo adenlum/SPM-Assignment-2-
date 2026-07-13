@@ -38,9 +38,13 @@ class Industry(Building):
     name = "Industry"
     symbol = "I"
 
-    # An Industry scores 1 point on its own. No adjacency bonuses.
+    # Each industry scores 1 point multiplied by the number of Industry buildings in the grid
     def score(self, grid, row, col):
-        return 1
+        return sum(
+            isinstance(b, Industry)
+            for row in grid.data
+            for b in row
+        )
 
     # Each Industry generates 1 coin per Residential building adjacent
     def income(self, grid, row, col):
