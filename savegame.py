@@ -28,8 +28,6 @@ def save_game(filename, grid, mode, **state):
     data = {
         "mode": mode,
         "size": grid.size,
-        "origin_x": grid.origin_x,
-        "origin_y": grid.origin_y,
         "board": [
             [cell.symbol if cell is not None else None for cell in row]
             for row in grid.data
@@ -55,8 +53,6 @@ def load_game(filename):
         data = json.load(f)
 
     grid = Grid(size=data["size"])
-    grid.origin_x = data["origin_x"]
-    grid.origin_y = data["origin_y"]
 
     for r, row in enumerate(data["board"]):
         for c, symbol in enumerate(row):
@@ -65,3 +61,17 @@ def load_game(filename):
                 grid.data[r][c] = building_class()
 
     return data["mode"], grid, data["state"]
+
+
+def list_saves():
+    """Lists the names of all available save files (without the .json extension).
+    :returns: a list of save names, empty if the saves folder doesn't exist or has no saves
+    """
+    if not os.path.isdir(SAVE_FOLDER):
+        return []
+
+    return [
+        os.path.splitext(f)[0]
+        for f in os.listdir(SAVE_FOLDER)
+        if f.endswith(".json")
+    ]

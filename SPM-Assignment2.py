@@ -81,18 +81,17 @@ def place_building(grid, available_buildings, turn, mode):
             print("Please enter valid numbers.")
 
 
-def arcade_mode():
+def arcade_mode(grid=None, coins=16, turn=1, score=0):
     print("\nOpening Arcade Mode...")
 
-    # Initialize Arcade Mode starting variables
-    grid = Grid(size=20)
-    coins = 16
-    turn = 1
-    score = 0
+    if grid is None:
+        # Initialize Arcade Mode starting variables
+        grid = Grid(size=20)
+        print("\nNew Arcade Game Started!")
+    else:
+        print("\nResuming Arcade Game!")
 
     building_types = [Residential, Industry, Commercial, Park, Road]
-
-    print("\nNew Arcade Game Started!")
 
     while coins > 0:
         selected_buildings = random.sample(building_types, 2)
@@ -108,7 +107,8 @@ def arcade_mode():
 
         print("\nOptions")
         print("1. Build a Building")
-        print("2. Exit to Main Menu")
+        print("2. Save Game")
+        print("3. Exit to Main Menu")
 
         option = input("\nSelect an option: ")
 
@@ -126,6 +126,13 @@ def arcade_mode():
             print("Coins Left:", coins)
 
         elif option == "2":
+            filename = input("\nEnter a name to save this game as: ")
+            path = savegame.save_game(
+                filename, grid, "arcade", coins=coins, turn=turn, score=score
+            )
+            print(f"\nGame saved to {path}")
+
+        elif option == "3":
             print("\nReturning to main menu...")
             return
 
@@ -137,15 +144,14 @@ def arcade_mode():
     input("\nPress Enter to return to the main menu...")
 
 
-def free_play_mode():
+def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0):
     print("\nOpening Free Play Mode...")
-    # initalize the starting variables
-    grid = Grid(size=5)
-    turn = 1
-    score = 0
-    turns_with_coin_loss = 0
-    # init game
-    print("\nNew Free Play Game Started!")
+    if grid is None:
+        # initalize the starting variables
+        grid = Grid(size=5)
+        print("\nNew Free Play Game Started!")
+    else:
+        print("\nResuming Free Play Game!")
     while turns_with_coin_loss < 20:
         # print routine
         print("\n===== FREE PLAY =====")
@@ -173,7 +179,16 @@ def free_play_mode():
         if turn_option == "3":
             print("Feature has not been implemented yet!")
         if turn_option == "4":
-            print("Feature has not been implemented yet!")
+            filename = input("\nEnter a name to save this game as: ")
+            path = savegame.save_game(
+                filename,
+                grid,
+                "freeplay",
+                turn=turn,
+                score=score,
+                turns_with_coin_loss=turns_with_coin_loss,
+            )
+            print(f"\nGame saved to {path}")
         if turn_option == "5":
             end_turn_option = input(
                 "Are you sure you want to end the current turn? (y/N): "
@@ -201,6 +216,47 @@ def free_play_mode():
 
 def load_game():
     print("\nOpening Load Game...")
+
+    saves = savegame.list_saves()
+
+    if not saves:
+        print("No saved games found.")
+        return
+
+    print("\nSaved Games:")
+    for i, name in enumerate(saves, start=1):
+        print(f"{i}. {name}")
+
+    choice = input(f"\nSelect a save to load (1-{len(saves)}), or 0 to cancel: ")
+
+    try:
+        choice = int(choice)
+    except ValueError:
+        print("Please enter a number.")
+        return
+
+    if choice == 0:
+        print("\nReturning to main menu...")
+        return
+
+    if not (1 <= choice <= len(saves)):
+        print("Invalid choice.")
+        return
+
+    filename = saves[choice - 1]
+
+    try:
+        mode, grid, state = savegame.load_game(filename)
+    except FileNotFoundError:
+        print("Save file not found.")
+        return
+
+    if mode == "arcade":
+        arcade_mode(grid, **state)
+    elif mode == "freeplay":
+        free_play_mode(grid, **state)
+    else:
+        print(f"Unknown save mode: {mode}")
 
 
 def settings():
