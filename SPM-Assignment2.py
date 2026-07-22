@@ -3,6 +3,7 @@ import savegame
 from building_types import Commercial, Industry, Park, Residential, Road
 from freeplay import fp_demolish_building, fp_place_building
 from grid import Grid
+from settings import freeplay_settings, settings_menu
 
 
 def display_menu():
@@ -144,21 +145,38 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
     input("\nPress Enter to return to the main menu...")
 
 
-def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0):
+def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=None):
     print("\nOpening Free Play Mode...")
+    if grid is None:
+        settings_menu()
+
+    if coins is None:
+        coins = freeplay_settings["starting_coins"]
+
+    if grid is None:
+        grid = Grid(size=5)
+        print("\nNew Free Play Game Started!")
+    else:
+        print("\nResuming Free Play Game!")
+    if coins is None:
+        coins = freeplay_settings["starting_coins"]
     if grid is None:
         # initalize the starting variables
         grid = Grid(size=5)
         print("\nNew Free Play Game Started!")
     else:
         print("\nResuming Free Play Game!")
-    while turns_with_coin_loss < 20:
+    while turns_with_coin_loss < freeplay_settings["coin_loss_limit"]:
         # print routine
         print("\n===== FREE PLAY =====")
         print(f"Board Size: {grid.size} x {grid.size}")
         print("Turn:", turn)
+        if coins == -1:
+            print("Coins: Unlimited")
+        else:
+            print("Coins:", coins)
         print("Score:", score)
-        print(f"Turns With Coin Loss: {turns_with_coin_loss} / 20")
+        print(f"Turns With Coin Loss: {turns_with_coin_loss} / {freeplay_settings['coin_loss_limit']}")
 
         print(grid)
 
@@ -167,18 +185,21 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0):
         print("1. Place Building")
         if not grid.is_empty():
             print("2. Demolish Building")
-        print("3. Settings")
-        print("4. Save Game")
-        print("5. End Current Turn")
-        print("0. Exit")
+        print("3. Save Game")
+        print("4. End Current Turn")
+        print("5. Exit")
         turn_option = input("\nSelect an option (1-5, 0): ")
         if turn_option == "1":
-            grid = fp_place_building(grid)
-        if turn_option == "2" and not grid.is_empty():
+            if coins == 0:
+                print("\nYou don't have enough coins to place a building.")
+            else:
+                grid = fp_place_building(grid)
+                if coins != -1:
+                    coins -= 1
+        elif turn_option == "2" and not grid.is_empty():
             grid = fp_demolish_building(grid)
-        if turn_option == "3":
-            print("Feature has not been implemented yet!")
-        if turn_option == "4":
+
+        elif turn_option == "3":
             filename = input("\nEnter a name to save this game as: ")
             path = savegame.save_game(
                 filename,
@@ -189,13 +210,15 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0):
                 turns_with_coin_loss=turns_with_coin_loss,
             )
             print(f"\nGame saved to {path}")
-        if turn_option == "5":
+        elif turn_option == "4":
             end_turn_option = input(
                 "Are you sure you want to end the current turn? (y/N): "
             )
             if end_turn_option.upper() == "Y":
                 # end of turn
                 turn_score, profit = grid.calculate_turn()
+                if coins != -1:
+                    coins+= profit
                 if profit < 0:
                     # if making a loss, add one
                     turns_with_coin_loss += 1
@@ -205,7 +228,7 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0):
                 score += turn_score
                 turn += 1
             continue
-        if turn_option == "0":
+        elif turn_option == "5":
             return
         else:
             print("Invalid option. Please try again.")

@@ -1,5 +1,6 @@
 from building_types import Residential, Industry, Commercial, Park, Road
 from grid import Grid
+from settings import freeplay_settings
 
 building_instances = [Residential(), Industry(), Commercial(), Park(), Road()]
 
@@ -50,7 +51,14 @@ def fp_place_building(grid: Grid):
 
                 # check if building on the sides, and that the grid should expand
                 if grid.has_building_on_border():
-                    grid.expand_grid(5)
+                    expansion = freeplay_settings["expansion_amount"]
+                    max_size = freeplay_settings["max_map_size"]
+                    # Only expand if the maximum size hasn't been reached
+                    if grid.size < max_size:
+                        if grid.size + (expansion * 2) > max_size:
+                            expansion = (max_size - grid.size) // 2
+                        if expansion > 0:
+                            grid.expand_grid(expansion)
                 break
             case "0":
                 break

@@ -4,6 +4,7 @@ from typing import Optional
 from building_types import Building, Commercial, Industry, Park, Residential, Road
 
 
+
 @dataclass
 class Grid:
     """Initializes a new grid object, with origin as coordinates (0, 0).
@@ -177,11 +178,20 @@ class Grid:
             for col in range(old_size):
                 self.data[row + increase][col + increase] = old_grid[row][col]
 
-    def calculate_turn(self) -> tuple[int, int]:
+    def calculate_turn(self,settings=None) -> tuple[int, int]:
         """Calculates the total score and profit (coins) generated from all buildings in a turn.
         The profit can be a negative value if the upkeep of buildings is greater than the income generated.
         :returns: (score, profit)
         """
+        residential_income = 1
+        industry_income = 2
+        commercial_income = 3
+
+        if settings is not None:
+            residential_income = settings["residential_income"]
+            industry_income = settings["industry_income"]
+            commercial_income = settings["commercial_income"]
+
         score = 0
         income = 0
         upkeep = 0
@@ -253,17 +263,17 @@ class Grid:
 
                 # income & upkeep
                 if isinstance(building, Residential):
-                    income += 1
+                    income += residential_income
 
                     # 1 upkeep per connected cluster
                     if (r, c) not in visited_residential:
                         __cluster_residential(r, c)
                         upkeep += 1
                 elif isinstance(building, Industry):
-                    income += 2
+                    income += industry_income
                     upkeep += 1
                 elif isinstance(building, Commercial):
-                    income += 3
+                    income += commercial_income
                     upkeep += 2
                 elif isinstance(building, Park):
                     upkeep += 1
