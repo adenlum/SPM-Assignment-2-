@@ -31,24 +31,24 @@ def fp_place_building(grid: Grid):
                     print(grid)
 
                     try:
-                        x = input("\nEnter X coordinate: ")
-                        if "~" in x:
+                        r = input("\nEnter row coordinate: ")
+                        if "~" in r:
                             break
-                        x = int(x)
-                        y = input("Enter Y coordinate: ")
-                        if "~" in y:
+                        r = int(r)
+                        c = input("Enter column coordinate: ")
+                        if "~" in c:
                             break
-                        y = int(y)
-                        b = grid.get(x, y)
+                        c = int(c)
+                        b = grid.get(r, c)
                         # building present
                         if b is not None and not isinstance(b, Blueprint):
                             print(
-                                f"There is a {b.name} building at coordinates ({x}, {y})!"
+                                f"There is a {b.name} building at coordinates ({r}, {c})!"
                             )
                             continue
                         grid.set(
-                            x,
-                            y,
+                            r,
+                            c,
                             Blueprint(building_to_place)
                             if blueprints_enabled
                             else building_to_place,
@@ -87,20 +87,20 @@ def fp_demolish_building(grid: Grid):
         print(grid)
 
         try:
-            x = input("\nEnter X coordinate: ")
-            if "~" in x:
+            r = input("\nEnter row coordinate: ")
+            if "~" in r:
                 break
-            x = int(x)
-            y = input("Enter Y coordinate: ")
-            if "~" in y:
+            r = int(r)
+            c = input("Enter column coordinate: ")
+            if "~" in c:
                 break
-            y = int(y)
-            b = grid.get(x, y)
+            c = int(c)
+            b = grid.get(r, c)
             # building present
             if b is None:
-                print(f"The coordinates ({x}, {y}) are empty!")
+                print(f"The coordinates ({r}, {c}) are empty!")
                 continue
-            grid.set(x, y, None)
+            grid.set(r, c, None)
             break
         except IndexError as e:
             # IndexError is raised when x, y are out of bounds

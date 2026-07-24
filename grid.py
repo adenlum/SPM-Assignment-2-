@@ -144,6 +144,7 @@ class Grid:
             return building.building
         return building
 
+
     def get(self, row: int, col: int) -> Optional[Building]:
         """Gets a value at a specific coordinate. This value can be a ``Building`` or ``None``.
         Raises ``IndexError`` if the coordinates entered are out of bounds.
@@ -313,8 +314,12 @@ class Grid:
                 # get building and check if its Residential
                 try:
                     b = self.get(current_row, current_col)
+
                     if preview:
                         b = self.resolve_blueprints(b)
+
+                    if b is None or isinstance(b, Blueprint):
+                        continue
 
                 except IndexError:
                     continue
@@ -341,8 +346,12 @@ class Grid:
                 # get building and check if its Road
                 try:
                     b = self.get(current_row, current_col)
+
                     if preview:
                         b = self.resolve_blueprints(b)
+
+                    if b is None or isinstance(b, Blueprint):
+                        continue
 
                 except IndexError:
                     continue
@@ -367,7 +376,7 @@ class Grid:
                 if preview:
                     building = self.resolve_blueprints(building)
 
-                if building is None:
+                if building is None or isinstance(building, Blueprint):
                     continue
 
                 # score
