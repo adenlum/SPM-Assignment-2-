@@ -14,6 +14,20 @@ class Building(ABC):
         return 0
 
 
+# blueprint wrapper for buildings
+class Blueprint:
+    def __init__(self, building: Building):
+        self.building = building
+
+    @property
+    def symbol(self):
+        return f"({self.building.symbol.lower()})"
+
+    @property
+    def name(self):
+        return f"{self.building.name} Blueprint"
+
+
 class Residential(Building):
     name = "Residential"
     symbol = "R"

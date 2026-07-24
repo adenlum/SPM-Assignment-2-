@@ -1,4 +1,5 @@
 import random
+
 import savegame
 from building_types import Commercial, Industry, Park, Residential, Road
 from freeplay import fp_demolish_building, fp_place_building
@@ -176,7 +177,9 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
         else:
             print("Coins:", coins)
         print("Score:", score)
-        print(f"Turns With Coin Loss: {turns_with_coin_loss} / {freeplay_settings['coin_loss_limit']}")
+        print(
+            f"Turns With Coin Loss: {turns_with_coin_loss} / {freeplay_settings['coin_loss_limit']}"
+        )
 
         print(grid)
 
@@ -185,10 +188,11 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
         print("1. Place Building")
         if not grid.is_empty():
             print("2. Demolish Building")
-        print("3. Save Game")
-        print("4. End Current Turn")
-        print("5. Exit")
-        turn_option = input("\nSelect an option (1-5, 0): ")
+            print("3. Show Turn Score Preview")
+        print("4. Save Game")
+        print("5. End Current Turn")
+        print("6. Exit")
+        turn_option = input("\nSelect an option (1-6, 0): ")
         if turn_option == "1":
             if coins == 0:
                 print("\nYou don't have enough coins to place a building.")
@@ -198,8 +202,29 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
                     coins -= 1
         elif turn_option == "2" and not grid.is_empty():
             grid = fp_demolish_building(grid)
+        elif turn_option == "3" and not grid.is_empty():
+            preview = grid.calculate_turn_preview()
 
-        elif turn_option == "3":
+            print("\n===== Projected Turn =====")
+            print(f"Coins Required: {preview.coins}")
+            print(f"Score: {preview.score:+}")
+            print(f"Profit: {preview.profit:+}")
+
+            if preview.contributions:
+                print("\n=== Score Contributions ===")
+
+                for contribution in preview.contributions:
+                    name = (
+                        f"{contribution['name']} {contribution['status']}"
+                        if contribution["status"] == "Blueprint"
+                        else f"{contribution['status']} {contribution['name']} "
+                    )
+                    print(
+                        f"{name} ({contribution['row']}, {contribution['col']}) +{contribution['score']}"
+                    )
+
+            _ = input("\nPress Enter to continue...")
+        elif turn_option == "4":
             filename = input("\nEnter a name to save this game as: ")
             path = savegame.save_game(
                 filename,
@@ -210,7 +235,7 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
                 turns_with_coin_loss=turns_with_coin_loss,
             )
             print(f"\nGame saved to {path}")
-        elif turn_option == "4":
+        elif turn_option == "5":
             end_turn_option = input(
                 "Are you sure you want to end the current turn? (y/N): "
             )
@@ -218,7 +243,7 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
                 # end of turn
                 turn_score, profit = grid.calculate_turn()
                 if coins != -1:
-                    coins+= profit
+                    coins += profit
                 if profit < 0:
                     # if making a loss, add one
                     turns_with_coin_loss += 1
@@ -228,7 +253,7 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
                 score += turn_score
                 turn += 1
             continue
-        elif turn_option == "5":
+        elif turn_option == "6":
             return
         else:
             print("Invalid option. Please try again.")

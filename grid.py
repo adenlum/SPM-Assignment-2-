@@ -1,8 +1,23 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from building_types import Building, Commercial, Industry, Park, Residential, Road
+from building_types import (
+    Blueprint,
+    Building,
+    Commercial,
+    Industry,
+    Park,
+    Residential,
+    Road,
+)
 
+
+@dataclass
+class ScorePreview:
+    coins: int
+    score: int
+    profit: int
+    contributions: list
 
 
 @dataclass
@@ -22,7 +37,9 @@ class Grid:
 
         lines = []
 
-        border = "+" + ("-" * cell_width + "+") * (self.size + 1)  # +1 for the label column
+        border = "+" + ("-" * cell_width + "+") * (
+            self.size + 1
+        )  # +1 for the label column
         lines.append(border)
 
         # header row: blank corner cell + column numbers, each in its own bordered cell
@@ -41,7 +58,6 @@ class Grid:
             lines.append(border)
 
         return "\n".join(lines)
-
 
     def __post_init__(self):
         self.data = [[None for _ in range(self.size)] for _ in range(self.size)]
@@ -75,7 +91,7 @@ class Grid:
             return cell
 
     # road adjacency
-    def road_adjacent(self, row: int, col: int):
+    def road_adjacent(self, row: int, col: int, resolve: bool = True):
         connected = []
         for dr, dc in [
             (0, 1),  # north
@@ -85,6 +101,9 @@ class Grid:
         ]:
             building = self.__trace_road(row, col, dr, dc)
 
+            if resolve:
+                building = self.resolve_blueprints(building)
+
             # check if a Building is actually found
             if building is not None:
                 # follow the road to the building and store it
@@ -93,11 +112,11 @@ class Grid:
                     nr += dr
                     nc += dc
 
-                connected.append((nr, nc, building))
+                connected.append((nr, nc, self.resolve_blueprints(building)))
         return connected
 
     # building directly beside another building
-    def direct_adjacent(self, row: int, col: int):
+    def direct_adjacent(self, row: int, col: int, resolve: bool = True):
         connected = []
         for dr, dc in [
             (0, 1),  # north
@@ -108,14 +127,26 @@ class Grid:
             # check if a Building is located in that direction
             building = self.safe_get(row + dr, col + dc)
 
+            if resolve:
+                building = self.resolve_blueprints(building)
+
             # check if a Building is actually found
             if building is not None:
                 connected.append((row + dr, col + dc, building))
         return connected
 
+    # used for resolving blueprint buildings to normal buildings for scoring
+    @staticmethod
+    def resolve_blueprints(
+        building: Optional[Building | Blueprint],
+    ) -> Optional[Building]:
+        if isinstance(building, Blueprint):
+            return building.building
+        return building
+
     def get(self, row: int, col: int) -> Optional[Building]:
-        """Gets a value at a specific coordinate. This value can be a Building or None.
-        Raises `IndexError` if the coordinates entered are out of bounds.
+        """Gets a value at a specific coordinate. This value can be a ``Building`` or ``None``.
+        Raises ``IndexError`` if the coordinates entered are out of bounds.
         :param row: The row (horizontal) value of the coordinate.
         :param col: The column (vertical) value of the coordinate.
         """
@@ -126,8 +157,8 @@ class Grid:
         return self.data[row][col]
 
     def safe_get(self, row: int, col: int) -> Optional[Building]:
-        """Returns a building if inside the grid, otherwise returns None.
-        This function differs from `get()` because it cannot distinguish between empty tiles and out of bounds.
+        """Returns a ``Building`` if inside the grid, otherwise returns ``None``.
+        This function differs from ``get()`` because it **cannot distinguish** between empty tiles and out of bounds.
         :param row: The row (horizontal) value of the coordinate.
         :param col: The column (vertical) value of the coordinate.
         """
@@ -136,8 +167,17 @@ class Grid:
         except IndexError:
             return None
 
-    def set(self, row: int, col: int, value: Building | None):
-        """Assigns a provided value at a specific coordinate. Building inserted must be a Building object.
+    def resolve_get(self, row: int, col: int) -> Optional[Building]:
+        """Wrapper function of the ``safe_get()`` with ``resolve_buildings()`` for getting a ``Blueprint`` from a tile
+        and transforming it into a ``Building``.
+        :param row: The row (horizontal) value of the coordinate.
+        :param col: The column (vertical) value of the coordinate.
+        """
+        building = self.safe_get(row, col)
+        return self.resolve_blueprints(building)
+
+    def set(self, row: int, col: int, value: Optional[Building | Blueprint]):
+        """Assigns a provided value at a specific coordinate. Value passed must be a ``Building`` or ``Blueprint`` object.
         :param row: The row (horizontal) value of the coordinate.
         :param col: The column (vertical) value of the coordinate.
         :param value: The building object to insert. To remove a building, use None.
@@ -146,20 +186,37 @@ class Grid:
         if not (0 <= row < self.size and 0 <= col < self.size):
             raise IndexError(f"Coordinates ({row}, {col}) are out of bounds.")
 
-        self.data[row][col] = value
-
-    def has_building_on_border(self) -> bool:
-        """Returns a boolean True or False depending on whether the grid has a building on its borders."""
-        return (
-            any(cell is not None for cell in self.data[0])
-            or any(cell is not None for cell in self.data[-1])
-            or any(row[0] is not None for row in self.data)
-            or any(row[-1] is not None for row in self.data)
-        )
+        self.data[row][col] = value  # type: ignore
 
     def is_empty(self) -> bool:
-        """Returns a boolean True or False depending on whether there's a building within the grid."""
+        """Returns a boolean ``True`` or ``False`` depending on whether there's a ``Building`` or ``Blueprint`` within the grid.
+        :returns: ``bool``
+        """
         return all(cell is None for row in self.data for cell in row)
+
+    def has_blueprints(self) -> bool:
+        """Returns a boolean ``True`` or ``False``depending on whether there's at least one ``Blueprint`` in the grid.
+        :returns: ``bool``
+        """
+        return any(isinstance(cell, Blueprint) for row in self.data for cell in row)
+
+    @staticmethod
+    def is_real_building(building: Optional[Building | Blueprint]) -> bool:
+        """Returns a boolean ``True`` or ``False`` depending on whether the value within a cell is a ``Building`` object.
+        :returns: ``bool``
+        """
+        return building is not None and not isinstance(building, Blueprint)
+
+    def has_building_on_border(self) -> bool:
+        """Returns a boolean ``True`` or ``False`` depending on whether the grid has a ``Building`` object on its borders.
+        :returns:``bool``
+        """
+        return (
+            any(self.is_real_building(cell) for cell in self.data[0])
+            or any(self.is_real_building(cell) for cell in self.data[-1])
+            or any(self.is_real_building(row[0]) for row in self.data)
+            or any(self.is_real_building(row[-1]) for row in self.data)
+        )
 
     def expand_grid(self, increase: int = 1):
         """Expands the grid by a given integer size in all directions. An increase of 1 increase the grid from a 5x5 to a 7x7.
@@ -178,7 +235,53 @@ class Grid:
             for col in range(old_size):
                 self.data[row + increase][col + increase] = old_grid[row][col]
 
-    def calculate_turn(self,settings=None) -> tuple[int, int]:
+    # helper function for obtaining score previews and blueprint contributions
+    def preview_scores(self):
+        scores = []
+
+        for r in range(self.size):
+            for c in range(self.size):
+                cell = self.get(r, c)
+
+                # skip empty tiles completely
+                if cell is None:
+                    continue
+
+                # identify if it's a blueprint or a placed building
+                is_blueprint = isinstance(cell, Blueprint)
+
+                # resolve it so we can safely extract its metadata/score rule
+                resolved_building = self.resolve_blueprints(cell)
+
+                assert resolved_building is not None
+                scores.append(
+                    {
+                        "row": r,
+                        "col": c,
+                        "name": resolved_building.name,
+                        "status": "Blueprint" if is_blueprint else "Placed",
+                        # Pass self to evaluate scores contextually in preview mode
+                        "score": resolved_building.score(self, r, c),
+                    }
+                )
+        return scores
+
+    def calculate_turn_preview(self, settings=None) -> ScorePreview:
+        """Calculates a returns a ``ScorePreview`` object representing resources gained from the current turn
+        given that all ``Blueprints`` have been placed.
+        :param settings: Game settings used in the calculation of ``calculate_turn()``. Defaults to ``None``.
+        :returns: ``ScorePreview``
+        """
+        score, profit = self.calculate_turn(settings, preview=True)
+
+        return ScorePreview(
+            coins=sum(isinstance(cell, Blueprint) for row in self.data for cell in row),
+            score=score,
+            profit=profit,
+            contributions=self.preview_scores(),
+        )
+
+    def calculate_turn(self, settings=None, preview=False) -> tuple[int, int]:
         """Calculates the total score and profit (coins) generated from all buildings in a turn.
         The profit can be a negative value if the upkeep of buildings is greater than the income generated.
         :returns: (score, profit)
@@ -210,6 +313,9 @@ class Grid:
                 # get building and check if its Residential
                 try:
                     b = self.get(current_row, current_col)
+                    if preview:
+                        b = self.resolve_blueprints(b)
+
                 except IndexError:
                     continue
 
@@ -235,6 +341,9 @@ class Grid:
                 # get building and check if its Road
                 try:
                     b = self.get(current_row, current_col)
+                    if preview:
+                        b = self.resolve_blueprints(b)
+
                 except IndexError:
                     continue
 
@@ -254,6 +363,9 @@ class Grid:
         for r in range(self.size):
             for c in range(self.size):
                 building = self.get(r, c)
+
+                if preview:
+                    building = self.resolve_blueprints(building)
 
                 if building is None:
                     continue
