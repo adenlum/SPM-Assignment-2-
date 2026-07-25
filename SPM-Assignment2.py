@@ -312,7 +312,8 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
             )
             if end_turn_option.upper() == "Y":
                 # end of turn
-                turn_score, profit = grid.calculate_turn()
+                turn_score, profit = grid.calculate_turn(freeplay_settings)
+                print(f"\nProfit this turn: {profit}")
                 if coins != -1:
                     coins += profit
                 if profit < 0:
