@@ -16,6 +16,84 @@ def display_menu():
     print("5. High Scores")
     print("6. Exit")
 
+def calculate_current_finances(grid, settings=None):
+    """Calculates the player's current income, upkeep, and profit based on
+    all REAL buildings currently on the board right now, without ending the
+    turn. Blueprints are ignored, since they aren't committed buildings yet.
+    Mirrors the exact same income/upkeep rules used in Grid.calculate_turn(),
+    so the live HUD numbers always match what End Turn will actually apply.
+    :returns: (income, upkeep, profit)
+    """
+    residential_income = 1
+    industry_income = 2
+    commercial_income = 3
+
+    if settings is not None:
+        residential_income = settings["residential_income"]
+        industry_income = settings["industry_income"]
+        commercial_income = settings["commercial_income"]
+
+    income = 0
+    upkeep = 0
+
+    visited_residential = set()
+    visited_road = set()
+
+    def cluster_residential(start_row, start_col):
+        stack = [(start_row, start_col)]
+        while stack:
+            r, c = stack.pop()
+            if (r, c) in visited_residential:
+                continue
+            b = grid.safe_get(r, c)
+            if not isinstance(b, Residential):
+                continue
+            visited_residential.add((r, c))
+            for nr, nc, nb in grid.direct_adjacent(r, c):
+                if isinstance(nb, Residential):
+                    stack.append((nr, nc))
+
+    def cluster_road(start_row, start_col):
+        stack = [(start_row, start_col)]
+        while stack:
+            r, c = stack.pop()
+            if (r, c) in visited_road:
+                continue
+            b = grid.safe_get(r, c)
+            if not isinstance(b, Road):
+                continue
+            visited_road.add((r, c))
+            for dr, dc in [(-1, 0), (1, 0), (0, 1), (0, -1)]:
+                stack.append((r + dr, c + dc))
+
+    for r in range(grid.size):
+        for c in range(grid.size):
+            building = grid.get(r, c)
+
+            # skip Blueprints - they're only a plan, not a real building yet
+            if building is None or isinstance(building, Blueprint):
+                continue
+
+            if isinstance(building, Residential):
+                income += residential_income
+                if (r, c) not in visited_residential:
+                    cluster_residential(r, c)
+                    upkeep += 1
+            elif isinstance(building, Industry):
+                income += industry_income
+                upkeep += 1
+            elif isinstance(building, Commercial):
+                income += commercial_income
+                upkeep += 2
+            elif isinstance(building, Park):
+                upkeep += 1
+            elif isinstance(building, Road):
+                if (r, c) not in visited_road:
+                    cluster_road(r, c)
+                    upkeep += 1
+
+    profit = income - upkeep
+    return income, upkeep, profit
 
 def place_building(grid, available_buildings, turn, mode):
     """Allow the player to choose and place a building."""
@@ -324,9 +402,18 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
         else:
             print("Coins:", coins)
         print("Score:", score)
+
+        current_income, current_upkeep, current_profit = calculate_current_finances(
+            grid, freeplay_settings
+        )
+        print("Current Profit:", f"+{current_profit}" if current_profit > 0 else current_profit)
+        print("Total Upkeep:", current_upkeep)
         print(
             f"Turns With Coin Loss: {turns_with_coin_loss} / {freeplay_settings['coin_loss_limit']}"
         )
+
+        if current_profit < 0:
+            print("\n⚠ Warning: Your city is currently losing money!")
 
         print(grid)
 
