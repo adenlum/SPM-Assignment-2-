@@ -296,14 +296,14 @@ class Grid:
             industry_income = settings["industry_income"]
             commercial_income = settings["commercial_income"]
 
-        if isinstance(building, Residential):
+        '''if isinstance(building, Residential):
             income += residential_income
 
         elif isinstance(building, Industry):
             income += industry_income
 
         elif isinstance(building, Commercial):
-            income += commercial_income
+            income += commercial_income'''
 
         score = 0
         income = 0
