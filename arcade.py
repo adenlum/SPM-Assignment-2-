@@ -41,11 +41,9 @@ def arcade_place_building(grid, available_buildings, turn, mode):
                 continue
 
             # Arcade rule:
-            # Turn 1 can build anywhere
-            # Turn 2 onwards must be adjacent
-            if (
-                mode == "arcade" and turn > 1 and not grid.is_empty()
-            ):  # Add and not grid.is_empty()
+            # Only allow placement anywhere if there's no buildings present
+            # otherwise only allow direct adjacent placements
+            if grid.has_real_buildings():
                 if not grid.direct_adjacent(r, c):
                     print("Building must be adjacent to an existing building.")
                     continue

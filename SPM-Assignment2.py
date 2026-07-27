@@ -160,21 +160,8 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
     print("\nOpening Free Play Mode...")
     if grid is None:
         settings_menu()
-
-    if coins is None:
-        coins = freeplay_settings["starting_coins"]
-
-    if grid is None:
-        grid = Grid(size=5)
-        print("\nNew Free Play Game Started!")
-    else:
-        print("\nResuming Free Play Game!")
-
-    if coins is None:
-        coins = freeplay_settings["starting_coins"]
-
-    if grid is None:
         # initalize the starting variables
+        coins = freeplay_settings["starting_coins"]
         grid = Grid(size=5)
         print("\nNew Free Play Game Started!")
     else:
@@ -194,9 +181,9 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
         current_income, current_profit = grid.calculate_turn(freeplay_settings)
         print(
             "Current Profit:",
-            f"+{current_profit}" if current_profit > 0 else current_profit,
+            f"{current_profit:+}" if current_profit > 0 else current_profit,
         )
-        print("Total Upkeep:", {current_income - current_profit})
+        print(f"Total Upkeep: {current_income - current_profit}")
         print(
             f"Turns With Coin Loss: {turns_with_coin_loss} / {freeplay_settings['coin_loss_limit']}"
         )
@@ -205,7 +192,6 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
             print("\n⚠ Warning: Your city is currently losing money!")
 
         print(grid)
-
         # turn
         print("\nOptions")
         print("1. Place Building")
