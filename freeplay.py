@@ -93,7 +93,7 @@ def fp_demolish_building(grid: Grid):
             r = int(r)
             c = input("Enter column coordinate: ")
             if "~" in c:
-                break
+                break2
             c = int(c)
             b = grid.get(r, c)
             # building present

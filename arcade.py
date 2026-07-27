@@ -62,20 +62,16 @@ def arcade_place_building(grid, available_buildings, turn, mode):
 
 
 def arcade_demolish_building(grid, coins):
-    """Allow the player to demolish an existing building in Arcade Mode for 1 coin."""
+    """Allow the player to demolish an existing building or remove a blueprint in Arcade Mode."""
 
     if grid.is_empty():
-        print("\nThere are no buildings to demolish.")
-        return coins, False
-
-    if coins <= 0:
-        print("\nYou do not have enough coins to demolish a building.")
+        print("\nThere are no buildings or blueprints to demolish.")
         return coins, False
 
     while True:
-        print("\n===== DEMOLISH BUILDING =====")
+        print("\n===== DEMOLISH BUILDING / BLUEPRINT =====")
         print(grid)
-        print("\nEnter the coordinates of the building you want to demolish.")
+        print("\nEnter the coordinates of the building or blueprint you want to remove.")
         print("Type ~ to cancel and return to Arcade Mode.")
 
         row_input = input("Enter row coordinate: ").strip()
@@ -96,15 +92,42 @@ def arcade_demolish_building(grid, coins):
 
             if building is None:
                 print(
-                    "\nThere is no building at this location. Please choose a cell with a building."
+                    "\nThere is no building or blueprint at this location. "
+                    "Please choose a cell with a building or blueprint."
                 )
                 continue
 
+            # Blueprint removal does not cost coin
             if isinstance(building, Blueprint):
-                print(
-                    "\nThis is a blueprint, not an actual building. Please choose an existing building."
-                )
-                continue
+                while True:
+                    confirm = (
+                        input(
+                            f"\nRemove {building.name} at ({row}, {col}) for 0 coins? (y/N): "
+                        )
+                        .strip()
+                        .upper()
+                    )
+
+                    if confirm == "Y":
+                        grid.set(row, col, None)
+
+                        print(f"\n{building.name} removed successfully.")
+                        print("Coins Left:", coins)
+                        print(grid)
+
+                        return coins, True
+
+                    elif confirm == "N" or confirm == "":
+                        print("\nRemove blueprint cancelled.")
+                        return coins, False
+
+                    else:
+                        print("\nInvalid input. Please enter Y to confirm or N to cancel.")
+
+            # Real building demolition costs 1 coin
+            if coins <= 0:
+                print("\nYou do not have enough coins to demolish a building.")
+                return coins, False
 
             while True:
                 confirm = (
@@ -136,5 +159,6 @@ def arcade_demolish_building(grid, coins):
 
         except ValueError:
             print("\nPlease enter valid numbers for row and column.")
+
         except IndexError:
             print("\nThose coordinates are outside the board. Please try again.")

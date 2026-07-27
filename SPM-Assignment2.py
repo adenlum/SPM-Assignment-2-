@@ -342,13 +342,15 @@ def high_scores():
 
 
 def exit_game():
-    confirm = input("\nAre you sure you want to exit the game? (y/N): ")
+    confirm = input("\nAre you sure you want to exit the game? (Y/N): ")
 
     if confirm.upper() == "Y":
         print("\nThank you for playing!")
         exit()
-    else:
+    elif confirm.upper() == "N":
         print("\nReturning to main menu...")
+    else:
+        print("\nInvalid input. Returning to main menu...")
 
 
 def main():
