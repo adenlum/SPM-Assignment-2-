@@ -1,7 +1,8 @@
 import random
 
 import savegame
-from building_types import Commercial, Industry, Park, Residential, Road, Blueprint
+from arcade import arcade_demolish_building, arcade_place_building
+from building_types import Blueprint, Commercial, Industry, Park, Residential, Road
 from freeplay import fp_demolish_building, fp_place_building
 from grid import Grid
 from settings import freeplay_settings, settings_menu
@@ -14,214 +15,7 @@ def display_menu():
     print("3. Load Game")
     print("4. Settings")
     print("5. High Scores")
-    print("6. Exit")
-
-def calculate_current_finances(grid, settings=None):
-    """Calculates the player's current income, upkeep, and profit based on
-    all REAL buildings currently on the board right now, without ending the
-    turn. Blueprints are ignored, since they aren't committed buildings yet.
-    Mirrors the exact same income/upkeep rules used in Grid.calculate_turn(),
-    so the live HUD numbers always match what End Turn will actually apply.
-    :returns: (income, upkeep, profit)
-    """
-    residential_income = 1
-    industry_income = 2
-    commercial_income = 3
-
-    if settings is not None:
-        residential_income = settings["residential_income"]
-        industry_income = settings["industry_income"]
-        commercial_income = settings["commercial_income"]
-
-    income = 0
-    upkeep = 0
-
-    visited_residential = set()
-    visited_road = set()
-
-    def cluster_residential(start_row, start_col):
-        stack = [(start_row, start_col)]
-        while stack:
-            r, c = stack.pop()
-            if (r, c) in visited_residential:
-                continue
-            b = grid.safe_get(r, c)
-            if not isinstance(b, Residential):
-                continue
-            visited_residential.add((r, c))
-            for nr, nc, nb in grid.direct_adjacent(r, c):
-                if isinstance(nb, Residential):
-                    stack.append((nr, nc))
-
-    def cluster_road(start_row, start_col):
-        stack = [(start_row, start_col)]
-        while stack:
-            r, c = stack.pop()
-            if (r, c) in visited_road:
-                continue
-            b = grid.safe_get(r, c)
-            if not isinstance(b, Road):
-                continue
-            visited_road.add((r, c))
-            for dr, dc in [(-1, 0), (1, 0), (0, 1), (0, -1)]:
-                stack.append((r + dr, c + dc))
-
-    for r in range(grid.size):
-        for c in range(grid.size):
-            building = grid.get(r, c)
-
-            # skip Blueprints - they're only a plan, not a real building yet
-            if building is None or isinstance(building, Blueprint):
-                continue
-
-            if isinstance(building, Residential):
-                income += residential_income
-                if (r, c) not in visited_residential:
-                    cluster_residential(r, c)
-                    upkeep += 1
-            elif isinstance(building, Industry):
-                income += industry_income
-                upkeep += 1
-            elif isinstance(building, Commercial):
-                income += commercial_income
-                upkeep += 2
-            elif isinstance(building, Park):
-                upkeep += 1
-            elif isinstance(building, Road):
-                if (r, c) not in visited_road:
-                    cluster_road(r, c)
-                    upkeep += 1
-
-    profit = income - upkeep
-    return income, upkeep, profit
-
-def place_building(grid, available_buildings, turn, mode):
-    """Allow the player to choose and place a building."""
-
-    print("\nAvailable Buildings:")
-
-    for i, building in enumerate(available_buildings, start=1):
-        print(f"{i}. {building.name} ({building.symbol})")
-
-    # Choose building
-    while True:
-        try:
-            choice = int(input(f"\nChoose a building (1-{len(available_buildings)}): "))
-
-            if 1 <= choice <= len(available_buildings):
-                building = available_buildings[choice - 1]
-                break
-
-            print("Invalid choice.")
-
-        except ValueError:
-            print("Please enter a number.")
-
-    # Choose location
-    while True:
-        try:
-            r = int(input("Enter row coordinate: "))
-            c = int(input("Enter column coordinate: "))
-
-            # Occupied / out of bounds
-            try:
-                occupied = grid.get(r, c)
-            except IndexError:
-                print("Those coordinates are outside the board. Please try again.")
-                continue
-
-            if occupied is not None and not isinstance(occupied, Blueprint):
-                print("That location is already occupied.")
-                continue
-
-            # Arcade rule:
-            # Turn 1 can build anywhere
-            # Turn 2 onwards must be adjacent
-            if mode == "arcade" and turn > 1 and not grid.is_empty():     # Add and not grid.is_empty() 
-                if not grid.direct_adjacent(r, c):
-                    print("Building must be adjacent to an existing building.")
-                    continue
-
-            grid.set(r, c, building)
-
-            print("\nBuilding placed successfully!")
-            print(grid)
-
-            return building, r, c
-
-        except ValueError:
-            print("Please enter valid numbers.")
-
-
-def arcade_demolish_building(grid, coins):
-    """Allow the player to demolish an existing building in Arcade Mode for 1 coin."""
-
-    if grid.is_empty():
-        print("\nThere are no buildings to demolish.")
-        return coins, False
-
-    if coins <= 0:
-        print("\nYou do not have enough coins to demolish a building.")
-        return coins, False
-
-    while True:
-        print("\n===== DEMOLISH BUILDING =====")
-        print(grid)
-        print("\nEnter the coordinates of the building you want to demolish.")
-        print("Type ~ to cancel and return to Arcade Mode.")
-
-        row_input = input("Enter row coordinate: ").strip()
-        if row_input == "~":
-            print("\nDemolish cancelled.")
-            return coins, False
-
-        col_input = input("Enter column coordinate: ").strip()
-        if col_input == "~":
-            print("\nDemolish cancelled.")
-            return coins, False
-
-        try:
-            row = int(row_input)
-            col = int(col_input)
-
-            building = grid.get(row, col)
-
-            if building is None:
-                print("\nThere is no building at this location. Please choose a cell with a building.")
-                continue
-
-            if isinstance(building, Blueprint):
-                print("\nThis is a blueprint, not an actual building. Please choose an existing building.")
-                continue
-
-            while True:
-                confirm = input(
-                    f"\nDemolish {building.name} at ({row}, {col}) for 1 coin? (y/N): "
-                ).strip().upper()
-
-                if confirm == "Y":
-                    break
-
-                elif confirm == "N" or confirm == "":
-                    print("\nDemolish cancelled.")
-                    return coins, False
-
-                else:
-                    print("\nInvalid input. Please enter Y to confirm or N to cancel.")
-
-            grid.set(row, col, None)
-            coins -= 1
-
-            print(f"\n{building.name} demolished successfully.")
-            print("Coins Left:", coins)
-            print(grid)
-
-            return coins, True
-
-        except ValueError:
-            print("\nPlease enter valid numbers for row and column.")
-        except IndexError:
-            print("\nThose coordinates are outside the board. Please try again.")
+    print("0. Exit")
 
 
 def arcade_mode(grid=None, coins=16, turn=1, score=0):
@@ -261,7 +55,7 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
         option = input("\nSelect an option (1-5, 0): ")
 
         if option == "1":
-            place_building(grid, selected_buildings, turn, "arcade")
+            arcade_place_building(grid, selected_buildings, turn, "arcade")
 
             # Use existing grid.py function to calculate score
             score, _ = grid.calculate_turn()
@@ -285,10 +79,8 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
             for i, b in enumerate(building_instances):
                 print(f"{i + 1}. {b.name} ({b.symbol})")
             print("\n0. Exit")
-            
-            option = input(
-                f"\nSelect an option (1-{len(building_instances)}, 0): "
-            )
+
+            option = input(f"\nSelect an option (1-{len(building_instances)}, 0): ")
             match option:
                 case "1" | "2" | "3" | "4" | "5":
                     building_idx = int(option) - 1
@@ -315,11 +107,7 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
                                     f"There is a {b.name} building at coordinates ({r}, {c})!"
                                 )
                                 continue
-                            grid.set(
-                                r,
-                                c,
-                                Blueprint(building_to_place)
-                            )
+                            grid.set(r, c, Blueprint(building_to_place))
                             break
                         except ValueError:
                             print("Please enter valid coordinates.")
@@ -384,14 +172,14 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
 
     if coins is None:
         coins = freeplay_settings["starting_coins"]
-        
+
     if grid is None:
         # initalize the starting variables
         grid = Grid(size=5)
         print("\nNew Free Play Game Started!")
     else:
         print("\nResuming Free Play Game!")
-        
+
     while turns_with_coin_loss < freeplay_settings["coin_loss_limit"]:
         # print routine
         print("\n===== FREE PLAY =====")
@@ -403,11 +191,12 @@ def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=Non
             print("Coins:", coins)
         print("Score:", score)
 
-        current_income, current_upkeep, current_profit = calculate_current_finances(
-            grid, freeplay_settings
+        current_income, current_profit = grid.calculate_turn(freeplay_settings)
+        print(
+            "Current Profit:",
+            f"+{current_profit}" if current_profit > 0 else current_profit,
         )
-        print("Current Profit:", f"+{current_profit}" if current_profit > 0 else current_profit)
-        print("Total Upkeep:", current_upkeep)
+        print("Total Upkeep:", {current_income - current_profit})
         print(
             f"Turns With Coin Loss: {turns_with_coin_loss} / {freeplay_settings['coin_loss_limit']}"
         )
@@ -566,7 +355,7 @@ def main():
     while True:
         display_menu()
 
-        choice = input("\nSelect an option (1-6): ")
+        choice = input("\nSelect an option (1-5, 0): ")
 
         match choice:
             case "1":
@@ -579,7 +368,7 @@ def main():
                 settings()
             case "5":
                 high_scores()
-            case "6":
+            case "0":
                 exit_game()
             case _:
                 print("Invalid option. Please try again.")
