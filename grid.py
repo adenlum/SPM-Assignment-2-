@@ -195,11 +195,11 @@ class Grid:
         """
         return all(cell is None for row in self.data for cell in row)
 
-    def has_blueprints(self) -> bool:
-        """Returns a boolean ``True`` or ``False``depending on whether there's at least one ``Blueprint`` in the grid.
+    def has_real_buildings(self) -> bool:
+        """Returns a boolean ``True`` or ``False`` depending on whether there's at least one ``Building`` in the grid.
         :returns: ``bool``
         """
-        return any(isinstance(cell, Blueprint) for row in self.data for cell in row)
+        return any(isinstance(cell, Building) for row in self.data for cell in row)
 
     @staticmethod
     def is_real_building(building: Optional[Building | Blueprint]) -> bool:
