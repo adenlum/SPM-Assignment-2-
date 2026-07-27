@@ -5,7 +5,7 @@ FREEPLAY_DEFAULTS = {
     "industry_income": 2,
     "commercial_income": 3,
     "expansion_amount": 5,
-    "max_map_size": 50,
+    "max_map_size": 25,
     "coin_loss_limit": 20
 }
 

@@ -92,6 +92,7 @@ class Road(Building):
     symbol = "*"
 
     # Roads score 1 point per connected road within the same row.
+    # Connected roads are defined as being connected to two or more buildings including other Roads.
     def score(self, grid, row, col):
         score = 1
 

@@ -144,7 +144,6 @@ class Grid:
             return building.building
         return building
 
-
     def get(self, row: int, col: int) -> Optional[Building]:
         """Gets a value at a specific coordinate. This value can be a ``Building`` or ``None``.
         Raises ``IndexError`` if the coordinates entered are out of bounds.
@@ -202,11 +201,11 @@ class Grid:
         return any(isinstance(cell, Building) for row in self.data for cell in row)
 
     @staticmethod
-    def is_real_building(building: Optional[Building | Blueprint]) -> bool:
-        """Returns a boolean ``True`` or ``False`` depending on whether the value within a cell is a ``Building`` object.
+    def is_real_building(value: Optional[Building | Blueprint]) -> bool:
+        """Returns a boolean ``True`` or ``False`` depending on whether the value provided is a ``Building`` object.
         :returns: ``bool``
         """
-        return building is not None and not isinstance(building, Blueprint)
+        return value is not None and not isinstance(value, Blueprint)
 
     def has_building_on_border(self) -> bool:
         """Returns a boolean ``True`` or ``False`` depending on whether the grid has a ``Building`` object on its borders.
@@ -337,13 +336,15 @@ class Grid:
         # clusters Roads within the same row
         def __cluster_road(start_row: int, start_col: int):
             stack = [(start_row, start_col)]
+            road_tiles = set()
+            buildings = set()
 
             while stack:
                 current_row, current_col = stack.pop()
-                if (current_row, current_col) in visited_road:
+
+                if (current_row, current_col) in road_tiles:
                     continue
 
-                # get building and check if its Road
                 try:
                     b = self.get(current_row, current_col)
 
@@ -359,15 +360,30 @@ class Grid:
                 if not isinstance(b, Road):
                     continue
 
+                road_tiles.add((current_row, current_col))
                 visited_road.add((current_row, current_col))
 
-                for dr, dc in [
-                    (-1, 0),  # north
-                    (1, 0),  # south
-                    (0, 1),  # east
-                    (0, -1),  # west
-                ]:
-                    stack.append((current_row + dr, current_col + dc))
+                for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    nr = current_row + dr
+                    nc = current_col + dc
+
+                    try:
+                        nb = self.get(nr, nc)
+
+                        if preview:
+                            nb = self.resolve_blueprints(nb)
+
+                        if nb is None or isinstance(nb, Blueprint):
+                            continue
+
+                    except IndexError:
+                        continue
+
+                    if isinstance(nb, Road):
+                        stack.append((nr, nc))
+                    else:
+                        buildings.add((nr, nc))
+            return road_tiles, buildings
 
         for r in range(self.size):
             for c in range(self.size):
@@ -400,6 +416,9 @@ class Grid:
                     upkeep += 1
                 elif isinstance(building, Road):
                     if (r, c) not in visited_road:
-                        __cluster_road(r, c)
-                        upkeep += 1
+                        _, connected_buildings = __cluster_road(r, c)
+
+                        # connected roads are defined as being connected to two or more buildings including other Roads.
+                        if len(connected_buildings) < 2:
+                            upkeep += 1
         return score, income - upkeep
