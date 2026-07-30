@@ -30,6 +30,8 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
 
     building_instances = [Residential(), Industry(), Commercial(), Park(), Road()]
 
+    game_saved = False
+
     while coins > 0:
         selected_buildings = random.sample(building_instances, 2)
 
@@ -145,14 +147,24 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
                 filename, grid, "arcade", coins=coins, turn=turn, score=score
             )
             print(f"\nGame saved to {path}")
+            game_saved = True
         elif option == "0":
             print("\nReturning to main menu...")
+
+            if not game_saved:
+                name = input("\nEnter your name for the high score board: ")
+                savegame.save_high_score(name, score, "arcade")
+
             return
         else:
             print("Invalid option. Please try again.")
 
     print("\nGame Over! You have run out of coins.")
     print("Final Score:", score)
+
+    name = input("\nEnter your name for the high score board: ")
+    savegame.save_high_score(name, score, "arcade")
+
     input("\nPress Enter to return to the main menu...")
 
 
@@ -327,7 +339,18 @@ def settings():
 
 
 def high_scores():
-    print("\nOpening High Scores...")
+    print("\n===== TOP 10 HIGH SCORES =====")
+
+    scores = savegame.get_high_scores()
+
+    if not scores:
+        print("No high scores recorded yet.")
+        return
+
+    for i, entry in enumerate(scores, start=1):
+        print(f"{i}. {entry['name']} - {entry['score']} points ({entry['mode']})")
+
+    input("\nPress Enter to return to the main menu...")
 
 
 def exit_game():
@@ -340,6 +363,7 @@ def exit_game():
         print("\nReturning to main menu...")
     else:
         print("\nInvalid input. Returning to main menu...")
+
 
 
 def main():

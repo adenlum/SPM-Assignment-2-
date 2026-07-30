@@ -14,6 +14,7 @@ SYMBOL_TO_CLASS = {
 }
 
 SAVE_FOLDER = "saves"
+HIGH_SCORE_FILE = os.path.join(SAVE_FOLDER, "highscores.json")
 
 
 def save_game(filename, grid, mode, **state):
@@ -73,5 +74,31 @@ def list_saves():
     return [
         os.path.splitext(f)[0]
         for f in os.listdir(SAVE_FOLDER)
-        if f.endswith(".json")
+        if f.endswith(".json") and f != os.path.basename(HIGH_SCORE_FILE)
     ]
+
+
+def save_high_score(name, score, mode):
+    """Adds a new high score entry and keeps only the top 10."""
+    os.makedirs(SAVE_FOLDER, exist_ok=True)
+
+    scores = get_high_scores()
+    scores.append({"name": name, "score": score, "mode": mode})
+
+    # sort descending by score, keep top 10
+    scores.sort(key=lambda entry: entry["score"], reverse=True)
+    scores = scores[:10]
+
+    with open(HIGH_SCORE_FILE, "w") as f:
+        json.dump(scores, f, indent=2)
+
+    return scores
+
+
+def get_high_scores():
+    """Returns the list of saved high scores, empty if none exist yet."""
+    if not os.path.isfile(HIGH_SCORE_FILE):
+        return []
+
+    with open(HIGH_SCORE_FILE, "r") as f:
+        return json.load(f)
