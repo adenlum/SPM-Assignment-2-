@@ -19,6 +19,8 @@ def settings_menu():
         print(f"3. Industry Income : {freeplay_settings['industry_income']}")
         print(f"4. Commercial Income : {freeplay_settings['commercial_income']}")
         print("5. Start Game")
+        print("0. Exit to Main Menu")
+
 
 
         option = input("Select option: ")
@@ -65,7 +67,10 @@ def settings_menu():
                 print("Invalid input.")
         elif option == "5":
             print("Starting game with settings:", freeplay_settings)
-            break
+            return "start"
+
+        elif option == "0":
+            return "exit"
 
         else:
             print("Invalid option.")

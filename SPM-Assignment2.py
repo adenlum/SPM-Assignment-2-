@@ -159,7 +159,10 @@ def arcade_mode(grid=None, coins=16, turn=1, score=0):
 def free_play_mode(grid=None, turn=1, score=0, turns_with_coin_loss=0, coins=None):
     print("\nOpening Free Play Mode...")
     if grid is None:
-        settings_menu()
+        result = settings_menu()
+        if result == "exit":
+            print("\nReturning to main menu...")
+            return
         # initalize the starting variables
         coins = freeplay_settings["starting_coins"]
         grid = Grid(size=5)
